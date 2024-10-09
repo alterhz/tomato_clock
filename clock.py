@@ -17,7 +17,7 @@ def countdown(minutes):
     total_seconds = minutes * 60
     play_music = True
     logging.info(f"开始倒计时：{minutes} 分钟")
-    log_box.insert(tk.END, f"{get_current_time()} 开始倒计时：{minutes} 分钟...")
+    log_box.insert(tk.END, f"{get_current_time()} 开始倒计时：{minutes} 分钟。")
     # 滚动到最后一行
     log_box.see(tk.END)
 
@@ -67,7 +67,7 @@ def flash_window():
 
 def get_current_time():
     import datetime
-    return datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    return datetime.datetime.now().strftime('%H:%M:%S')
 
 
 if __name__ == '__main__':
@@ -75,7 +75,7 @@ if __name__ == '__main__':
 
     logging.info("启动倒计时提醒程序")
     root = tk.Tk()
-    root.title("倒计时提醒")
+    root.title("番茄计时器")
 
     if hasattr(sys, '_MEIPASS'):
         root.iconbitmap(sys._MEIPASS + '/clock.ico')
@@ -91,10 +91,10 @@ if __name__ == '__main__':
     time_label = tk.Label(root, textvariable=time_str, font=font_style, fg='red', bg='black', bd=10)
     time_label.pack()
 
-    button_font_style = ("Microsoft YaHei", 24)
-    start_0_1_min_button = tk.Button(root, text="开始倒计时（25 分钟）", command=lambda: start_countdown(0.05),
+    button_font_style = ("Microsoft YaHei", 18)
+    start_0_1_min_button = tk.Button(root, text="工作 25 分钟", command=lambda: start_countdown(25),
                                      font=button_font_style, bd=10, width=20)
-    start_5_min_button = tk.Button(root, text="开始倒计时（5 分钟）", command=lambda: start_countdown(5),
+    start_5_min_button = tk.Button(root, text="休息 5 分钟", command=lambda: start_countdown(5),
                                    font=button_font_style, bd=10, width=20)
 
     start_0_1_min_button.pack(fill=tk.X)
@@ -106,6 +106,23 @@ if __name__ == '__main__':
     log_box.pack(fill=tk.BOTH, expand=True)
 
     update_time()
+
+    def center_window(root):
+        # 获取屏幕宽度和高度
+        screen_width = root.winfo_screenwidth()
+        screen_height = root.winfo_screenheight()
+        # 确保窗口布局已经完成，再获取窗口的实际宽度和高度
+        root.update_idletasks()
+        # 获取窗口宽度和高度
+        window_width = root.winfo_width()
+        window_height = root.winfo_height()
+        # 计算窗口左上角的坐标
+        x = (screen_width - window_width) / 2
+        y = (screen_height - window_height) / 2
+        logging.debug(f"屏幕宽度：{screen_width}，屏幕高度：{screen_height}，窗口宽度：{window_width}，窗口高度：{window_height}")
+        root.geometry('+%d+%d' % (x, y))
+
+    center_window(root)
 
     root.mainloop()
     logging.info("退出倒计时提醒程序")
