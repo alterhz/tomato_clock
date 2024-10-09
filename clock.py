@@ -1,9 +1,10 @@
 import logging
-import os
 import sys
 import threading
 import tkinter as tk
+
 from playsound import playsound
+
 from logger_utils import init_logging_basic_config
 
 total_seconds = 0
@@ -26,6 +27,7 @@ def update_time():
     if total_seconds > 0:
         hours, remainder = divmod(total_seconds, 3600)
         minutes, seconds = divmod(remainder, 60)
+        time_label.config(fg='white')
         time_str.set(f"{int(hours):02d}:{int(minutes):02d}:{int(seconds):02d}")
         total_seconds -= 1
     elif total_seconds == 0:
@@ -35,6 +37,7 @@ def update_time():
             log_box.insert(tk.END, f"{get_current_time()} 倒计时结束。")
             # 滚动到最后一行
             log_box.see(tk.END)
+            time_label.config(fg='red')
             time_str.set("00:00:00")
             play_music = False
             threading.Thread(target=play_alert).start()
@@ -53,9 +56,13 @@ def start_countdown(minutes):
 
 def flash_window():
     # 先最小化窗口
-    root.iconify()
+    # root.iconify()
     # 之后再将其显示出来
     root.wm_deiconify()
+    # 窗口置顶
+    root.attributes("-topmost", True)
+    # 3 秒后取消窗口置顶
+    root.after(3000, lambda: root.attributes("-topmost", False))
 
 
 def get_current_time():
@@ -66,9 +73,9 @@ def get_current_time():
 if __name__ == '__main__':
     init_logging_basic_config()
 
+    logging.info("启动倒计时提醒程序")
     root = tk.Tk()
     root.title("倒计时提醒")
-    logging.info("启动倒计时提醒程序")
 
     if hasattr(sys, '_MEIPASS'):
         root.iconbitmap(sys._MEIPASS + '/clock.ico')
@@ -81,11 +88,11 @@ if __name__ == '__main__':
     root.configure(bg='black')
     time_str = tk.StringVar()
     time_str.set("00:00:00")
-    time_label = tk.Label(root, textvariable=time_str, font=font_style, fg='white', bg='black', bd=10)
+    time_label = tk.Label(root, textvariable=time_str, font=font_style, fg='red', bg='black', bd=10)
     time_label.pack()
 
     button_font_style = ("Microsoft YaHei", 24)
-    start_0_1_min_button = tk.Button(root, text="开始倒计时（25 分钟）", command=lambda: start_countdown(25),
+    start_0_1_min_button = tk.Button(root, text="开始倒计时（25 分钟）", command=lambda: start_countdown(0.05),
                                      font=button_font_style, bd=10, width=20)
     start_5_min_button = tk.Button(root, text="开始倒计时（5 分钟）", command=lambda: start_countdown(5),
                                    font=button_font_style, bd=10, width=20)
