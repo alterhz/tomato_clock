@@ -2,14 +2,17 @@ import logging
 import sys
 import threading
 import tkinter as tk
-
 from playsound import playsound
-
 from logger_utils import init_logging_basic_config
+import configparser
 
 total_seconds = 0
 music_path = "alert.wav"
 play_music = False
+auto_rest = False
+
+# 创建配置解析器对象
+config = configparser.ConfigParser()
 
 
 def countdown(minutes):
@@ -42,6 +45,8 @@ def update_time():
             play_music = False
             threading.Thread(target=play_alert).start()
             flash_window()
+            if auto_rest and auto_rest_var.get():
+                start_countdown(5)
 
     root.after(1000, update_time)
 
@@ -51,18 +56,19 @@ def play_alert():
 
 
 def start_countdown(minutes):
+    global auto_rest
+    if minutes != 5:
+        auto_rest = True
+    else:
+        auto_rest = False
     countdown(minutes)
+    if auto_minimize_var.get() and minutes == 25:
+        root.iconify()
 
 
 def flash_window():
-    # 先最小化窗口
-    # root.iconify()
     # 之后再将其显示出来
     root.wm_deiconify()
-    # 窗口置顶
-    root.attributes("-topmost", True)
-    # 3 秒后取消窗口置顶
-    root.after(3000, lambda: root.attributes("-topmost", False))
 
 
 def get_current_time():
@@ -70,11 +76,23 @@ def get_current_time():
     return datetime.datetime.now().strftime('%H:%M:%S')
 
 
+def save_config():
+    config.has_section('Settings') or config.add_section('Settings')
+    config.set('Settings', 'topmost', str(topmost_var.get()))
+    config.set('Settings', 'auto_minimize', str(auto_minimize_var.get()))
+    config.set('Settings', 'auto_rest', str(auto_rest_var.get()))
+    with open('config.ini', 'w') as configfile:
+        config.write(configfile)
+    logging.debug(
+        f"保存配置：topmost={topmost_var.get()}，auto_minimize={auto_minimize_var.get()}，auto_rest={auto_rest_var.get()}")
+
+
 if __name__ == '__main__':
     init_logging_basic_config()
 
     logging.info("启动倒计时提醒程序")
     root = tk.Tk()
+    root.resizable(False, False)
     root.title("番茄计时器")
 
     if hasattr(sys, '_MEIPASS'):
@@ -85,17 +103,77 @@ if __name__ == '__main__':
 
     # 设置窗口置顶
     font_style = ("Microsoft YaHei", 48)
-    root.configure(bg='black')
     time_str = tk.StringVar()
     time_str.set("00:00:00")
-    time_label = tk.Label(root, textvariable=time_str, font=font_style, fg='red', bg='black', bd=10)
+    time_label = tk.Label(root, textvariable=time_str, font=font_style, fg='red', bg='black', bd=10, width=8)
     time_label.pack()
+
+    # 创建一个 Frame 用于放置 Checkbox 和按钮
+    frame = tk.Frame(root)
+    frame.pack()
+
+    # 窗口置顶 Checkbox
+    topmost_var = tk.BooleanVar()
+    # 尝试从配置文件中读取窗口置顶状态，如果没有则设置为 False
+    try:
+        config.read('config.ini')
+        topmost_var.set(config.getboolean('Settings', 'topmost', fallback=False))
+    except (configparser.NoSectionError, configparser.NoOptionError):
+        topmost_var.set(False)
+
+
+    def toggle_topmost():
+        if topmost_var.get():
+            root.attributes("-topmost", True)
+        else:
+            root.attributes("-topmost", False)
+
+        # 更新配置文件
+        save_config()
+
+
+    topmost_checkbox = tk.Checkbutton(frame, text="窗口置顶", variable=topmost_var, onvalue=True, offvalue=False,
+                                      command=toggle_topmost)
+    topmost_checkbox.pack(side=tk.LEFT)
+
+    # 自动最小化 Checkbox
+    auto_minimize_var = tk.BooleanVar()
+    # 尝试从配置文件中读取自动最小化状态，如果没有则设置为 False
+    try:
+        config.read('config.ini')
+        auto_minimize_var.set(config.getboolean('Settings', 'auto_minimize', fallback=False))
+    except (configparser.NoSectionError, configparser.NoOptionError):
+        auto_minimize_var.set(False)
+
+    auto_minimize_checkbox = tk.Checkbutton(frame, text="点击工作最小化", variable=auto_minimize_var, onvalue=True,
+                                            offvalue=False, command=save_config)
+    auto_minimize_checkbox.pack(side=tk.LEFT)
+
+    # 工作完毕自动休息 Checkbox
+    auto_rest_var = tk.BooleanVar()
+    try:
+        config.read('config.ini')
+        auto_rest_var.set(config.getboolean('Settings', 'auto_rest', fallback=False))
+    except (configparser.NoSectionError, configparser.NoOptionError):
+        auto_rest_var.set(False)
+
+    def toggle_auto_rest():
+        global auto_rest
+        if auto_rest_var.get():
+            auto_rest = True
+        else:
+            auto_rest = False
+        save_config()
+
+    auto_rest_checkbox = tk.Checkbutton(frame, text="工作完毕自动休息", variable=auto_rest_var, onvalue=True,
+                                        offvalue=False, command=toggle_auto_rest)
+    auto_rest_checkbox.pack(side=tk.LEFT)
 
     button_font_style = ("Microsoft YaHei", 18)
     start_0_1_min_button = tk.Button(root, text="工作 25 分钟", command=lambda: start_countdown(25),
-                                     font=button_font_style, bd=10, width=20)
+                                     font=button_font_style, bd=10, width=10)
     start_5_min_button = tk.Button(root, text="休息 5 分钟", command=lambda: start_countdown(5),
-                                   font=button_font_style, bd=10, width=20)
+                                   font=button_font_style, bd=10, width=10)
 
     start_0_1_min_button.pack(fill=tk.X)
     start_5_min_button.pack(fill=tk.X)
@@ -105,9 +183,21 @@ if __name__ == '__main__':
     log_box.config(height=8)  # 设置 Listbox 的行数为 10
     log_box.pack(fill=tk.BOTH, expand=True)
 
+    # 创建菜单栏
+    menubar = tk.Menu(root)
+    root.config(menu=menubar)
+
+    # 创建一个子菜单
+    view_menu = tk.Menu(menubar, tearoff=0)
+    menubar.add_cascade(label="设置", menu=view_menu)
+
+    # 添加窗口置顶选项
+    view_menu.add_command(label="测试", command=lambda: start_countdown(0.05))
+
     update_time()
 
-    def center_window(root):
+
+    def center_window():
         # 获取屏幕宽度和高度
         screen_width = root.winfo_screenwidth()
         screen_height = root.winfo_screenheight()
@@ -119,10 +209,12 @@ if __name__ == '__main__':
         # 计算窗口左上角的坐标
         x = (screen_width - window_width) / 2
         y = (screen_height - window_height) / 2
-        logging.debug(f"屏幕宽度：{screen_width}，屏幕高度：{screen_height}，窗口宽度：{window_width}，窗口高度：{window_height}")
+        logging.debug(
+            f"屏幕宽度：{screen_width}，屏幕高度：{screen_height}，窗口宽度：{window_width}，窗口高度：{window_height}")
         root.geometry('+%d+%d' % (x, y))
 
-    center_window(root)
+
+    center_window()
 
     root.mainloop()
     logging.info("退出倒计时提醒程序")
