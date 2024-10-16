@@ -1,6 +1,6 @@
 # tomato_clock
 番茄计时器
-![img.png](img.png)
+![img1.png](img1.png)
 
 # 2024-10-16 更新内容
 1. 置顶显示
