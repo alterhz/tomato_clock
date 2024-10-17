@@ -2,6 +2,8 @@ import logging
 import sys
 import threading
 import tkinter as tk
+from tkinter import messagebox
+
 from playsound import playsound
 from logger_utils import init_logging_basic_config
 import configparser
@@ -45,6 +47,8 @@ def update_time():
             play_music = False
             threading.Thread(target=play_alert).start()
             flash_window()
+            # 弹窗提示倒计时结束
+            messagebox.showinfo("提示", "倒计时完毕")
             if auto_rest and auto_rest_var.get():
                 start_countdown(5)
 
@@ -121,6 +125,8 @@ if __name__ == '__main__':
     except (configparser.NoSectionError, configparser.NoOptionError):
         topmost_var.set(False)
 
+    if topmost_var.get():
+        root.attributes("-topmost", True)
 
     def toggle_topmost():
         if topmost_var.get():
