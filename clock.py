@@ -8,13 +8,15 @@ from playsound import playsound
 from logger_utils import init_logging_basic_config
 import configparser
 
+# 暂停标记
+pause_timer = False
 total_seconds = 0
 music_path = "alert.wav"
 play_music = False
 auto_rest = False
 
 WINDOW_WIDTH = 334
-WINDOW_MIN_HEIGHT = 100
+WINDOW_MIN_HEIGHT = 110
 WINDOW_MAX_HEIGHT = 450
 
 # 创建配置解析器对象
@@ -32,6 +34,11 @@ def countdown(minutes):
 
 
 def update_time():
+    root.after(1000, update_time)
+    if pause_timer:
+        time_str.set(f"已暂停")
+        return
+
     global total_seconds
     if total_seconds > 0:
         hours, remainder = divmod(total_seconds, 3600)
@@ -56,15 +63,14 @@ def update_time():
             if auto_rest and auto_rest_var.get():
                 start_countdown(5)
 
-    root.after(1000, update_time)
-
 
 def play_alert():
     playsound(music_path)
 
 
 def start_countdown(minutes):
-    global auto_rest
+    global auto_rest, pause_timer
+    pause_timer = False
     if minutes != 5:
         auto_rest = True
     else:
@@ -81,7 +87,6 @@ def flash_window():
     root.wm_deiconify()
     # 将窗口最大化
     root.geometry(f"{WINDOW_WIDTH}x{WINDOW_MAX_HEIGHT}")
-
 
 
 def get_current_time():
@@ -111,6 +116,15 @@ def menu():
     view_menu.add_command(label="测试", command=lambda: start_countdown(0.05))
 
 
+def pause_or_resume():
+    # 获取当前按钮的文本
+    global pause_timer
+    if pause_timer:
+        pause_timer = False
+    else:
+        pause_timer = True
+
+
 if __name__ == '__main__':
     init_logging_basic_config()
 
@@ -126,12 +140,16 @@ if __name__ == '__main__':
     else:
         root.iconbitmap('clock.ico')
 
-    # 设置窗口置顶
     font_style = ("Microsoft YaHei", 48)
     time_str = tk.StringVar()
     time_str.set("00:00:00")
-    time_label = tk.Label(root, textvariable=time_str, font=font_style, fg='red', bg='black', bd=10, width=8)
+    time_label = tk.Label(root, textvariable=time_str, font=font_style, fg='red', bg='black', width=10)
     time_label.pack()
+
+    pause_str = tk.StringVar()
+    pause_str.set("左键Mini窗口，右键暂停继续")
+    pause_label = tk.Label(root, textvariable=pause_str, fg='green', bg='black', width=50)
+    pause_label.pack()
 
 
     def change_window_size(event):
@@ -143,6 +161,14 @@ if __name__ == '__main__':
 
 
     time_label.bind("<Button-1>", change_window_size)
+
+
+    # 右键
+    def right_click(event):
+        pause_or_resume()
+
+
+    time_label.bind("<Button-3>", right_click)
 
     # 创建一个Frame用于放置Checkbox和按钮
     frame = tk.Frame(root)
@@ -211,10 +237,11 @@ if __name__ == '__main__':
     auto_rest_checkbox.pack(side=tk.LEFT)
 
     button_font_style = ("Microsoft YaHei", 18)
+
     start_0_1_min_button = tk.Button(root, text="工作25分钟", command=lambda: start_countdown(25),
-                                     font=button_font_style, bd=10, width=10)
+                                     font=button_font_style, bd=5, width=10)
     start_5_min_button = tk.Button(root, text="休息5分钟", command=lambda: start_countdown(5),
-                                   font=button_font_style, bd=10, width=10)
+                                   font=button_font_style, bd=5, width=10)
 
     start_0_1_min_button.pack(fill=tk.X)
     start_5_min_button.pack(fill=tk.X)
