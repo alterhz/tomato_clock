@@ -100,6 +100,17 @@ def save_config():
         f"保存配置：topmost={topmost_var.get()}，auto_minimize={auto_minimize_var.get()}，auto_rest={auto_rest_var.get()}")
 
 
+def menu():
+    # 创建菜单栏
+    menubar = tk.Menu(root)
+    root.config(menu=menubar)
+    # 创建一个子菜单
+    view_menu = tk.Menu(menubar, tearoff=0)
+    menubar.add_cascade(label="设置", menu=view_menu)
+    # 添加窗口置顶选项
+    view_menu.add_command(label="测试", command=lambda: start_countdown(0.05))
+
+
 if __name__ == '__main__':
     init_logging_basic_config()
 
@@ -213,16 +224,7 @@ if __name__ == '__main__':
     log_box.config(height=8)  # 设置Listbox的行数为10
     log_box.pack(fill=tk.BOTH, expand=True)
 
-    # 创建菜单栏
-    menubar = tk.Menu(root)
-    root.config(menu=menubar)
-
-    # 创建一个子菜单
-    view_menu = tk.Menu(menubar, tearoff=0)
-    menubar.add_cascade(label="设置", menu=view_menu)
-
-    # 添加窗口置顶选项
-    view_menu.add_command(label="测试", command=lambda: start_countdown(0.05))
+    # menu()
 
     update_time()
 
