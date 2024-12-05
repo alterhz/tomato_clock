@@ -210,7 +210,7 @@ if __name__ == '__main__':
     except (configparser.NoSectionError, configparser.NoOptionError):
         auto_minimize_var.set(False)
 
-    auto_minimize_checkbox = tk.Checkbutton(frame, text="工作进入Mini窗口", variable=auto_minimize_var, onvalue=True,
+    auto_minimize_checkbox = tk.Checkbutton(frame, text="Mini窗口", variable=auto_minimize_var, onvalue=True,
                                             offvalue=False, command=save_config)
     auto_minimize_checkbox.pack(side=tk.LEFT)
 
@@ -232,12 +232,24 @@ if __name__ == '__main__':
         save_config()
 
 
-    auto_rest_checkbox = tk.Checkbutton(frame, text="工作完毕自动休息", variable=auto_rest_var, onvalue=True,
+    auto_rest_checkbox = tk.Checkbutton(frame, text="自动休息", variable=auto_rest_var, onvalue=True,
                                         offvalue=False, command=toggle_auto_rest)
     auto_rest_checkbox.pack(side=tk.LEFT)
 
-    button_font_style = ("Microsoft YaHei", 18)
 
+    def toggle_transparent():
+        if transparent_var.get():
+            root.attributes('-alpha', 0.5)
+        else:
+            root.attributes('-alpha', 1.0)
+
+
+    transparent_var = tk.BooleanVar()
+    transparent_checkbox = tk.Checkbutton(frame, text="半透明", variable=transparent_var, onvalue=True,
+                                          offvalue=False, command=toggle_transparent)
+    transparent_checkbox.pack(side=tk.LEFT)
+
+    button_font_style = ("Microsoft YaHei", 18)
     start_0_1_min_button = tk.Button(root, text="工作25分钟", command=lambda: start_countdown(25),
                                      font=button_font_style, bd=5, width=10)
     start_5_min_button = tk.Button(root, text="休息5分钟", command=lambda: start_countdown(5),
