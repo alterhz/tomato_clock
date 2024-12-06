@@ -77,8 +77,8 @@ def start_countdown(minutes):
         auto_rest = False
     countdown(minutes)
     if auto_minimize_var.get() and minutes == 25:
-        # root.iconify()
-        root.geometry(f"{WINDOW_WIDTH}x{WINDOW_MIN_HEIGHT}")
+        # 将窗口最小化
+        change_window_size(None)
 
 
 def flash_window():
@@ -99,6 +99,7 @@ def save_config():
     config.set('Settings', 'topmost', str(topmost_var.get()))
     config.set('Settings', 'auto_minimize', str(auto_minimize_var.get()))
     config.set('Settings', 'auto_rest', str(auto_rest_var.get()))
+    config.set('Settings', 'transparent', str(transparent_var.get()))
     with open('config.ini', 'w') as configfile:
         config.write(configfile)
     logging.debug(
@@ -156,8 +157,10 @@ if __name__ == '__main__':
         window_height = root.winfo_height()
         if window_height > WINDOW_MIN_HEIGHT:
             root.geometry(f"{WINDOW_WIDTH}x{WINDOW_MIN_HEIGHT}")
+            set_transparent_when_mini(True)
         else:
             root.geometry(f"{WINDOW_WIDTH}x{WINDOW_MAX_HEIGHT}")
+            set_transparent_when_mini(False)
 
 
     time_label.bind("<Button-1>", change_window_size)
@@ -238,13 +241,28 @@ if __name__ == '__main__':
 
 
     def toggle_transparent():
+        save_config()
         if transparent_var.get():
-            root.attributes('-alpha', 0.5)
+            change_window_size(None)
+
+
+    def set_transparent_when_mini(mini: bool):
+        """
+        勾选半透明后，mini窗口半透明，最大化，取消半透明
+        """
+        if transparent_var.get():
+            root.attributes('-alpha', 0.5 if mini else 1.0)
         else:
             root.attributes('-alpha', 1.0)
 
 
     transparent_var = tk.BooleanVar()
+    # 尝试从配置文件中读取自动最小化状态，如果没有则设置为False
+    try:
+        config.read('config.ini')
+        transparent_var.set(config.getboolean('Settings', 'transparent', fallback=False))
+    except (configparser.NoSectionError, configparser.NoOptionError):
+        transparent_var.set(False)
     transparent_checkbox = tk.Checkbutton(frame, text="半透明", variable=transparent_var, onvalue=True,
                                           offvalue=False, command=toggle_transparent)
     transparent_checkbox.pack(side=tk.LEFT)
