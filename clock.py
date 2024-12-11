@@ -25,10 +25,14 @@ WINDOW_MAX_HEIGHT = 450
 # 创建配置解析器对象
 config = configparser.ConfigParser()
 
+countdown_minutes = 0
+
 
 def countdown(minutes):
-    global total_seconds, play_music
+    global total_seconds, play_music, countdown_minutes
     total_seconds = minutes * 60
+    # total_seconds = minutes
+    countdown_minutes = minutes
     play_music = True
     logging.info(f"开始倒计时：{minutes} 分钟")
     log_box.insert(tk.END, f"{get_current_time()} 开始倒计时：{minutes} 分钟。")
@@ -59,12 +63,19 @@ def update_time():
             time_label.config(fg='red')
             time_str.set("00:00:00")
             play_music = False
+
+            if countdown_minutes == 25:
+                concentration_count = concentration_count + 1
+                # 更新total_label显示
+                total_label.config(text=f"专注总次数：{concentration_count}\n专注总时间：{concentration_count * 25}分钟")
+                # 更新标题
+                root.title(f"番茄计时器 +{concentration_count}")
+
             threading.Thread(target=play_alert).start()
             flash_window()
             # 弹窗提示倒计时结束
             messagebox.showinfo("提示", "倒计时完毕")
             if auto_rest and auto_rest_var.get():
-                concentration_count = concentration_count + 1
                 start_countdown(5)
 
 
