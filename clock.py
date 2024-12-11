@@ -8,12 +8,15 @@ from playsound import playsound
 from logger_utils import init_logging_basic_config
 import configparser
 
+DEBUG = False
 # 暂停标记
 pause_timer = False
 total_seconds = 0
 music_path = "alert.wav"
 play_music = False
 auto_rest = False
+
+concentration_count = 0
 
 WINDOW_WIDTH = 334
 WINDOW_MIN_HEIGHT = 110
@@ -39,7 +42,7 @@ def update_time():
         time_str.set(f"已暂停")
         return
 
-    global total_seconds
+    global total_seconds, concentration_count
     if total_seconds > 0:
         hours, remainder = divmod(total_seconds, 3600)
         minutes, seconds = divmod(remainder, 60)
@@ -61,6 +64,7 @@ def update_time():
             # 弹窗提示倒计时结束
             messagebox.showinfo("提示", "倒计时完毕")
             if auto_rest and auto_rest_var.get():
+                concentration_count = concentration_count + 1
                 start_countdown(5)
 
 
@@ -87,6 +91,7 @@ def flash_window():
     root.wm_deiconify()
     # 将窗口最大化
     root.geometry(f"{WINDOW_WIDTH}x{WINDOW_MAX_HEIGHT}")
+    set_transparent_when_mini(False)
 
 
 def get_current_time():
@@ -166,7 +171,6 @@ if __name__ == '__main__':
     time_label.bind("<Button-1>", change_window_size)
 
 
-    # 右键
     def right_click(event):
         pause_or_resume()
 
@@ -267,21 +271,30 @@ if __name__ == '__main__':
                                           offvalue=False, command=toggle_transparent)
     transparent_checkbox.pack(side=tk.LEFT)
 
-    button_font_style = ("Microsoft YaHei", 18)
-    start_0_1_min_button = tk.Button(root, text="工作25分钟", command=lambda: start_countdown(25),
-                                     font=button_font_style, bd=5, width=10)
-    start_5_min_button = tk.Button(root, text="休息5分钟", command=lambda: start_countdown(5),
-                                   font=button_font_style, bd=5, width=10)
+    # 添加一个frame
+    frame = tk.Frame(root)
+    frame.pack()
 
-    start_0_1_min_button.pack(fill=tk.X)
-    start_5_min_button.pack(fill=tk.X)
+    button_font_style = ("Microsoft YaHei", 18)
+    start_0_1_min_button = tk.Button(frame, text="工作25分钟", command=lambda: start_countdown(25),
+                                     font=button_font_style, bd=5, width=10)
+    start_0_1_min_button.pack(side=tk.LEFT)
+    start_5_min_button = tk.Button(frame, text="休息5分钟", command=lambda: start_countdown(5),
+                                   font=button_font_style, bd=5, width=10)
+    start_5_min_button.pack(side=tk.LEFT)
+
+    # 添加一个Label来显示专注总次数和总时间
+
+    total_label = tk.Label(root, text=f"专注总次数：{concentration_count}\n专注总时间：{concentration_count * 25}分钟", font=("Microsoft YaHei", 12))
+    total_label.pack()
 
     # 添加Listbox来记录计时器日志
     log_box = tk.Listbox(root, font=("Microsoft YaHei", 12))
     log_box.config(height=8)  # 设置Listbox的行数为10
     log_box.pack(fill=tk.BOTH, expand=True)
 
-    # menu()
+    if DEBUG:
+        menu()
 
     update_time()
 
@@ -301,7 +314,6 @@ if __name__ == '__main__':
         logging.debug(
             f"屏幕宽度：{screen_width}，屏幕高度：{screen_height}，窗口宽度：{window_width}，窗口高度：{window_height}")
         root.geometry('+%d+%d' % (x, y))
-
 
     center_window()
 
